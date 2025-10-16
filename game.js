@@ -17,7 +17,17 @@ const player = {
     height: 50,
     speed: 5,
     dx: 0,
-    emoji: '🦁'
+    emoji: '🦁',
+    hasPowerUp: false
+};
+
+// パワーアップアイテム
+const powerUps = [];
+const powerUpInfo = {
+    width: 30,
+    height: 30,
+    speed: 3,
+    emoji: '🍪' // ちんすこう
 };
 
 // 弾
@@ -47,10 +57,11 @@ const enemyInfo = {
 
 // 敵の生成
 function createEnemies() {
+    const newEnemies = [];
     for (let r = 0; r < enemyInfo.rows; r++) {
         for (let c = 0; c < enemyInfo.cols; c++) {
             const isSpecial = Math.random() < 0.2;
-            enemies.push({
+            newEnemies.push({
                 x: c * (enemyInfo.width + enemyInfo.padding) + enemyInfo.offsetX,
                 y: r * (enemyInfo.height + enemyInfo.padding) - enemyInfo.offsetY, // Start off-screen
                 width: enemyInfo.width,
@@ -60,6 +71,34 @@ function createEnemies() {
             });
         }
     }
+
+    // 新しい敵の塊が既存の敵と重ならないかチェック
+    let overlapping = false;
+    for (const newEnemy of newEnemies) {
+        for (const existingEnemy of enemies) {
+            if (isOverlapping(newEnemy, existingEnemy)) {
+                overlapping = true;
+                break;
+            }
+        }
+        if (overlapping) {
+            break;
+        }
+    }
+
+    // 重なっていなければ敵を追加
+    if (!overlapping) {
+        enemies.push(...newEnemies);
+    }
+}
+
+function isOverlapping(rect1, rect2) {
+    return (
+        rect1.x < rect2.x + rect2.width &&
+        rect1.x + rect1.width > rect2.x &&
+        rect1.y < rect2.y + rect2.height &&
+        rect1.y + rect1.height > rect2.y
+    );
 }
 
 let enemyInterval;
@@ -93,6 +132,13 @@ function drawEnemies() {
     });
 }
 
+function drawPowerUps() {
+    ctx.font = '30px serif';
+    powerUps.forEach(powerUp => {
+        ctx.fillText(powerUpInfo.emoji, powerUp.x, powerUp.y + powerUpInfo.height - 5);
+    });
+}
+
 // プレイヤーの移動
 function movePlayer() {
     player.x += player.dx;
@@ -110,6 +156,7 @@ function movePlayer() {
 function moveProjectiles() {
     projectiles.forEach((p, index) => {
         p.y -= p.speed;
+        p.x += p.dx; // 水平方向の移動を追加
         if (p.y + p.height < 0) {
             projectiles.splice(index, 1);
         }
@@ -137,8 +184,19 @@ function moveEnemies() {
     }
 }
 
+// パワーアップアイテムの移動
+function movePowerUps() {
+    powerUps.forEach((powerUp, index) => {
+        powerUp.y += powerUpInfo.speed;
+        if (powerUp.y > canvas.height) {
+            powerUps.splice(index, 1);
+        }
+    });
+}
+
 // 衝突判定
 function checkCollisions() {
+    // 弾と敵の衝突
     projectiles.forEach((p, pIndex) => {
         enemies.forEach((enemy, eIndex) => {
             if (
@@ -149,8 +207,16 @@ function checkCollisions() {
             ) {
                 // 衝突したら弾と敵を消す
                 projectiles.splice(pIndex, 1);
+
                 if (enemy.isSpecial) {
                     score += 2;
+                    // パワーアップアイテムを生成
+                    powerUps.push({
+                        x: enemy.x + enemy.width / 2 - powerUpInfo.width / 2,
+                        y: enemy.y,
+                        width: powerUpInfo.width,
+                        height: powerUpInfo.height
+                    });
                 } else {
                     score++;
                 }
@@ -158,6 +224,23 @@ function checkCollisions() {
                 scoreEl.innerText = score;
             }
         });
+    });
+
+    // プレイヤーとパワーアップアイテムの衝突
+    powerUps.forEach((powerUp, puIndex) => {
+        if (
+            player.x < powerUp.x + powerUp.width &&
+            player.x + player.width > powerUp.x &&
+            player.y < powerUp.y + powerUp.height &&
+            player.y + player.height > powerUp.y
+        ) {
+            powerUps.splice(puIndex, 1);
+            player.hasPowerUp = true;
+            // 10秒後にパワーアップ解除
+            setTimeout(() => {
+                player.hasPowerUp = false;
+            }, 10000);
+        }
     });
 
     // 敵がプレイヤーに衝突
@@ -207,6 +290,7 @@ function update() {
     movePlayer();
     moveProjectiles();
     moveEnemies();
+    movePowerUps();
     checkCollisions();
 
     draw();
@@ -219,6 +303,7 @@ function draw() {
     drawPlayer();
     drawProjectiles();
     drawEnemies();
+    drawPowerUps();
 }
 
 // キー操作
@@ -230,15 +315,45 @@ function keyDown(e) {
             createEnemies(); //最初の敵を生成
             startEnemySpawning();
         } else if (!gameOver) {
-            // 弾の発射
-            if (projectiles.length < 5) { // 画面上の弾の数を制限
-                projectiles.push({
-                    x: player.x + player.width / 2 - projectile.width / 2,
-                    y: player.y,
-                    width: projectile.width,
-                    height: projectile.height,
-                    speed: projectile.speed
-                });
+            const limit = player.hasPowerUp ? 15 : 5;
+            if (projectiles.length < limit) { // 画面上の弾の数を制限
+                if (player.hasPowerUp) {
+                    // 3方向ショット
+                    projectiles.push({ // 中央
+                        x: player.x + player.width / 2 - projectile.width / 2,
+                        y: player.y,
+                        width: projectile.width,
+                        height: projectile.height,
+                        speed: projectile.speed,
+                        dx: 0
+                    });
+                    projectiles.push({ // 左
+                        x: player.x + player.width / 2 - projectile.width / 2,
+                        y: player.y,
+                        width: projectile.width,
+                        height: projectile.height,
+                        speed: projectile.speed,
+                        dx: -2
+                    });
+                    projectiles.push({ // 右
+                        x: player.x + player.width / 2 - projectile.width / 2,
+                        y: player.y,
+                        width: projectile.width,
+                        height: projectile.height,
+                        speed: projectile.speed,
+                        dx: 2
+                    });
+                } else {
+                    // 通常の弾
+                    projectiles.push({
+                        x: player.x + player.width / 2 - projectile.width / 2,
+                        y: player.y,
+                        width: projectile.width,
+                        height: projectile.height,
+                        speed: projectile.speed,
+                        dx: 0
+                    });
+                }
             }
         }
     }
