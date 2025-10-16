@@ -54,7 +54,8 @@ function createEnemies() {
     }
 }
 
-createEnemies();
+createEnemies(); // 最初の敵を生成
+setInterval(createEnemies, 10000); // 10秒ごとに新しい敵を生成
 
 // 描画
 function drawPlayer() {
@@ -180,7 +181,8 @@ function keyDown(e) {
                 x: player.x + player.width / 2 - projectile.width / 2,
                 y: player.y,
                 width: projectile.width,
-                height: projectile.height
+                height: projectile.height,
+                speed: projectile.speed
             });
         }
     }

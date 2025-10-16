@@ -14,9 +14,21 @@ h1 {
 #game-container {
     position: relative;
     border: 2px solid #ff6347;
-    background-image: url('https://i.imgur.com/J4v1s5H.png'); /* 沖縄の海の背景画像 */
+    isolation: isolate; /* Creates a stacking context */
+}
+
+#game-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('background.png'); /* 沖縄の海の背景画像 */
     background-size: cover;
     background-position: center;
+    opacity: 0.4; /* 背景の透明度を調整 */
+    z-index: -1; /* canvasの後ろに配置 */
 }
 
 canvas {
