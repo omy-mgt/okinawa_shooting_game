@@ -9,11 +9,16 @@
 <body>
     <h1>沖縄インベーダー</h1>
     <div id="game-container">
+        <div id="start-screen">
+            <h1>沖縄インベーダー</h1>
+            <p>スペースキーで開始</p>
+        </div>
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="score-board">スコア: <span id="score">0</span></div>
         <div id="game-over" class="hidden">
             <h2>ゲームオーバー</h2>
             <p>リフレッシュして再挑戦！</p>
+            <button id="restart-button">もう一度プレイ</button>
         </div>
     </div>
     <script src="game.js"></script>
