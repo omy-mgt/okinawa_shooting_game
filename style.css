@@ -1,0 +1,50 @@
+body {
+    background-color: #f0f8ff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Arial', sans-serif;
+    color: #333;
+}
+
+h1 {
+    color: #ff6347;
+}
+
+#game-container {
+    position: relative;
+    border: 2px solid #ff6347;
+    background-image: url('https://i.imgur.com/J4v1s5H.png'); /* 沖縄の海の背景画像 */
+    background-size: cover;
+    background-position: center;
+}
+
+canvas {
+    display: block;
+}
+
+#score-board {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 24px;
+    color: white;
+    text-shadow: 2px 2px 4px #000000;
+}
+
+#game-over {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 99, 71, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 2em;
+}
+
+.hidden {
+    display: none;
+}
